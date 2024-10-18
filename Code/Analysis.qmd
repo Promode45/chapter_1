@@ -1,0 +1,47 @@
+---
+title: "Analysis"
+format: html
+editor: visual
+---
+# Loading libraries
+```{r echo=FALSE}
+library(tidyverse)
+library(readxl)
+library(car)
+```
+
+# Importing data
+```{r}
+data <- read_xlsx("Data/params.xlsx")
+```
+# EDA
+```{r}
+summary(data)
+glimpse(data)
+```
+
+```{r}
+data_w <- data |> 
+  mutate(treatment = as.factor(treatment))
+```
+
+```{r}
+data_w |> 
+  ggplot(aes(treatment,thetas, color = treatment))+
+  geom_boxplot()+
+  geom_jitter()+
+  labs(y = "Porosity", 
+       title = "Porosity across treatments")+
+  theme_classic()+
+  theme(legend.position = "none")
+  
+```
+
+```{r}
+options(contrasts = c("contr.sum", "contr.poly"))
+
+mod <- lm(thetas ~ treatment, data = data_w)
+summary(mod)
+Anova(mod, type = 3)
+```
+
