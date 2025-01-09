@@ -12,7 +12,7 @@ library(car)
 
 # Importing data
 ```{r}
-data <- read_xlsx("Data/params.xlsx")
+data <- read_xlsx("../Data/params_struc.xlsx")
 ```
 # EDA
 ```{r}
@@ -22,7 +22,11 @@ glimpse(data)
 
 ```{r}
 data_w <- data |> 
-  mutate(treatment = as.factor(treatment))
+  mutate(treatment = as.factor(treatment),
+         fertilization = case_when(treatment == "NPK" | treatment == "NPK+Disturbance" ~ "Fertilized",
+                                   .default = "Unfertilized"),
+         disturbance = case_when(treatment == "Disturbance" | treatment == "NPK+Disturbance" ~ "Disturbed",
+                                 .default = "Undisturbed"))
 ```
 
 ```{r}
@@ -34,14 +38,230 @@ data_w |>
        title = "Porosity across treatments")+
   theme_classic()+
   theme(legend.position = "none")
+
+#ggsave("../Output/porosity.jpg", dpi = 300, height = 5, width = 7)
   
+```
+```{r}
+data_w |> 
+  ggplot(aes(treatment,thetar, color = treatment))+
+  geom_boxplot()+
+  geom_jitter()+
+  labs(y = "Porosity", 
+       title = "Porosity across treatments")+
+  theme_classic()+
+  theme(legend.position = "none")
 ```
 
 ```{r}
 options(contrasts = c("contr.sum", "contr.poly"))
 
-mod <- lm(thetas ~ treatment, data = data_w)
-summary(mod)
-Anova(mod, type = 3)
+kruskal.test(treatment~thetas, data = data_w)
+library(FSA)
+dunnTest(thetas ~ treatment, data = data_w, method = "holm")
+```
+
+```{r}
+data_w |> 
+  ggplot(aes(treatment,micro))+
+  geom_boxplot()+
+  geom_jitter()
+```
+```{r}
+data_w |> 
+  ggplot(aes(treatment,small))+
+  geom_boxplot()+
+  geom_jitter()
+```
+
+```{r}
+data_w |> 
+  ggplot(aes(treatment,medium))+
+  geom_boxplot()+
+  geom_jitter()
+```
+
+```{r}
+data_w |> 
+  ggplot(aes(treatment,large))+
+  geom_boxplot()+
+  geom_jitter()
+```
+
+
+
+```{r}
+data_w |> 
+  ggplot(aes(micro, large))+
+  geom_point(aes(color = treatment))
+```
+
+```{r}
+kruskal.test(medium~treatment, data = data_w)
+library(FSA)
+dunnTest(medium ~ treatment, data = data_w, method = "holm")
+```
+```{r}
+y_axis_labels <- c("")
+```
+
+```{r}
+library(ggstatsplot)
+library(tibble)
+dat <- data_w
+x <- "treatment"
+cols <- c(12:15,2:8) # the 4 continuous dependent variables
+type <- "non-parametric" # given the large number of observations, we use the parametric version
+paired <- F # FALSE for independent samples, TRUE for paired samples
+# edit until here
+
+# edit at your own risk
+plotlist <-
+  purrr::pmap(
+    .l = list(
+      data = list(as_tibble(dat)),
+      x = x,
+      y = as.list(colnames(dat)[cols]),
+      plot.type = "box", # for boxplot
+      type = type, # parametric or nonparametric
+      pairwise.comparisons = TRUE, # to run post-hoc tests if more than 2 groups
+      pairwise.display = "significant", # show only significant differences
+      bf.message = FALSE, # remove message about Bayes Factor
+      centrality.plotting = FALSE # remove central measure
+    ),
+    .f = ifelse(paired, # automatically use ggwithinstats if paired samples, ggbetweenstats otherwise
+      ggstatsplot::ggwithinstats,
+      ggstatsplot::ggbetweenstats
+    ),
+    violin.args = list(width = 0, linewidth = 0) # remove violin plots and keep only boxplots
+  )
+length(plotlist)
+# print all plots together with statistical results
+for (i in 1:length(plotlist)) {
+  plotlist[[i]] <- plotlist[[i]]+
+    theme(panel.grid.minor = element_blank(),
+        axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        axis.title.x = element_blank(),
+        plot.subtitle = element_text(size = 14, face = "bold"))
+  print(plotlist[[i]])
+  #ggsave(filename = paste0("plot_",i,".png"), plot = plotlist[[i]], width = 7, height = 5, dpi = 300)
+}
+
+
+```
+
+Maybe use Log-ratio transformations to transform compositional data(pore size composition), and then try to analyze them. 
+
+
+```{r}
+shapiro.test(data_w$n1)
+kruskal.test(thetar ~ treatment, data = data_w)
+dt <- dunnTest(thetar ~ treatment, data = data_w, method = "holm") 
+dt$res
+
+significant_comparisons <- dt$res %>% 
+  filter(P.adj < 0.05) %>%
+  select(Comparison, P.adj) |> 
+  mutate(P.adj = round(P.adj,3))
+```
+
+```{r}
+p <- data_w |> 
+  ggplot(aes(treatment,thetar, color = treatment))+
+  geom_boxplot()+
+  geom_jitter(alpha = 0.3)+
+  theme_classic()+
+  theme(panel.grid.minor = element_blank(),
+        axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        axis.title.x = element_blank(),
+        strip.text = element_text(size = 15),  # Facet label text
+        # legend.text = element_text(size = 13),
+        legend.title = element_blank(),
+        legend.position = "none",
+        plot.title = element_text(size = 15, face = "bold"))+
+  labs(x = "Treatment",
+       y = expression('θ'[r]))+
+  scale_color_viridis_d()
+
+y_positions <- c(max(data_w$alpha2) + 1, max(data_w$alpha2) + 3, max(data_w$alpha2) + 5)
+
+# Add asterisks instead of p-values
+p + 
+  geom_segment(aes(x = 1, xend = 4, y = y_positions[1], yend = y_positions[1]), size = 0.5, color = "black") +
+  annotate("text", x = 2.5, y = y_positions[1] + 0.5, label = "**", size = 6) +
+  geom_segment(aes(x = 2, xend = 3, y = y_positions[2], yend = y_positions[2]), size = 0.5, color = "black") +
+  annotate("text", x = 2.5, y = y_positions[2] + 0.5, label = "*", size = 6) +
+  geom_segment(aes(x = 3, xend = 4, y = y_positions[3], yend = y_positions[3]), size = 0.5, color = "black") +
+  annotate("text", x = 3.5, y = y_positions[3] + 0.5, label = "***", size = 6)
+
+#ggsave("../Output/theta_r.jpg", dpi = 300)
+```
+
+```{r}
+y_axis_labels <- list("Micropore proportion",
+                   "Small pore proportion",
+                   "Medium pore proportion",
+                   "Large pore proportion",
+                   expression("θ"[r]),
+                   expression("θ"[s]),
+                   expression("α"[1]),
+                   expression("n"[1]),
+                   expression("α"[2]),
+                   expression("n"[2]),
+                   expression("w"[1]))
+
+```
+
+```{r}
+library(ggstatsplot)
+library(tibble)
+dat <- data_w
+x <- "treatment"
+cols <- c(12:15,2:8) # the 4 continuous dependent variables
+type <- "non-parametric" # given the large number of observations, we use the parametric version
+paired <- F # FALSE for independent samples, TRUE for paired samples
+# edit until here
+
+# edit at your own risk
+plotlist <-
+  purrr::pmap(
+    .l = list(
+      data = list(as_tibble(dat)),
+      x = x,
+      y = as.list(colnames(dat)[cols]),
+      plot.type = "box", # for boxplot
+      type = type, # parametric or nonparametric
+      pairwise.comparisons = TRUE, # to run post-hoc tests if more than 2 groups
+      pairwise.display = "significant", # show only significant differences
+      bf.message = FALSE, # remove message about Bayes Factor
+      centrality.plotting = FALSE # remove central measure
+    ),
+    .f = ifelse(paired, # automatically use ggwithinstats if paired samples, ggbetweenstats otherwise
+      ggstatsplot::ggwithinstats,
+      ggstatsplot::ggbetweenstats
+    ),
+    violin.args = list(width = 0, linewidth = 0) # remove violin plots and keep only boxplots
+  )
+length(plotlist)
+# print all plots together with statistical results
+for (i in 1:length(plotlist)) {
+  plotlist[[i]] <- plotlist[[i]]+
+    scale_y_continuous(name = y_axis_labels[[i]])+
+    theme(panel.grid.minor = element_blank(),
+        axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        axis.title.x = element_blank(),
+        strip.text = element_text(size = 15),  # Facet label text
+        plot.subtitle = element_text(size = 14, face = "bold"))
+    print(plotlist[[i]])
+  #ggsave(filename = paste0("plot_",i,".png"), plot = plotlist[[i]], width = 7, height = 5, dpi = 300)
+}
+```
+
+```{r}
+kruskal.test(medium ~ disturbance, data = data_w)
+
 ```
 
