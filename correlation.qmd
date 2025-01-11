@@ -1,0 +1,52 @@
+---
+title: "correlation"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(psych)
+```
+
+```{r}
+data <- readxl::read_xlsx("Data/params_struc.xlsx")
+```
+
+```{r}
+corr_data <- bind_cols(data[,2:7],data[,16:29])
+```
+
+```{r}
+m = cor(corr_data, use = "complete.obs")
+corPlot(m)
+```
+
+```{r}
+dist <- data |> 
+  filter(treatment == "Disturbance")
+dist_corr <- bind_cols(dist[,2:7],dist[,16:29])
+corPlot(cor(dist_corr,use = "complete.obs"))
+```
+
+```{r}
+control <- data |> 
+  filter(treatment == "Control")
+control_corr <- bind_cols(control[,2:7],control[,16:29])
+corPlot(cor(control_corr,use = "complete.obs"))
+```
+
+```{r}
+npk <- data |> 
+  filter(treatment == "NPK")
+npk_corr <- bind_cols(npk[,2:7],npk[,16:29])
+corPlot(cor(npk_corr,use = "complete.obs"))
+```
+
+```{r}
+npk_dist <- data |> 
+  filter(treatment == "NPK+Disturbance")
+npk_dist_corr <- bind_cols(npk_dist[,2:7],npk_dist[,16:29])
+corPlot(cor(npk_dist_corr,use = "complete.obs"))
+```
+
