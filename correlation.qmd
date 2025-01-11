@@ -18,15 +18,24 @@ corr_data <- bind_cols(data[,2:7],data[,16:29])
 ```
 
 ```{r}
-m = cor(corr_data, use = "complete.obs")
-corPlot(m)
+library(rstatix)
+m = cor_mat(corr_data, method = "spearman")
+x <- m |> 
+  gather(-rowname,key = cor_var, value = r)
+# corrplot::corrplot(m, method = "number")
+x |> 
+  ggplot(aes(rowname, cor_var, fill = r)) + 
+  geom_tile() +
+  labs(x = "variables", y = "variables")+
+  geom_text(aes(label = r))
 ```
 
 ```{r}
 dist <- data |> 
   filter(treatment == "Disturbance")
 dist_corr <- bind_cols(dist[,2:7],dist[,16:29])
-corPlot(cor(dist_corr,use = "complete.obs"))
+corPlot(cor(dist_corr,use = "complete.obs", method = "s"))
+
 ```
 
 ```{r}
@@ -48,5 +57,9 @@ npk_dist <- data |>
   filter(treatment == "NPK+Disturbance")
 npk_dist_corr <- bind_cols(npk_dist[,2:7],npk_dist[,16:29])
 corPlot(cor(npk_dist_corr,use = "complete.obs"))
+```
+
+```{r}
+corrplot::
 ```
 
