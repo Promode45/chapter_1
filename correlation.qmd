@@ -10,56 +10,142 @@ library(psych)
 ```
 
 ```{r}
-data <- readxl::read_xlsx("Data/params_struc.xlsx")
+data <- readxl::read_xlsx("Data/params_struc.xlsx") |> 
+  mutate(label = factor(label))
 ```
 
 ```{r}
-corr_data <- bind_cols(data[,2:7],data[,16:29])
+corr_data <- bind_cols(data[,2:8],data[,12:34])
+corr_data2 <- bind_cols(data[,2:8],data[,12:16],data[,21:34])
+
 ```
 
-```{r}
+```{r fig.width=8, fig.height=6}
 library(rstatix)
 m = cor_mat(corr_data, method = "spearman")
 x <- m |> 
   gather(-rowname,key = cor_var, value = r)
 # corrplot::corrplot(m, method = "number")
+x_filtered <- x |> 
+  filter(abs(r) > 0.5)
 x |> 
+  # filter(abs(r) > 0.5) |> 
+  #filter(cor_var == "BD" | rowname == "BD") |> 
   ggplot(aes(rowname, cor_var, fill = r)) + 
-  geom_tile() +
-  labs(x = "variables", y = "variables")+
-  geom_text(aes(label = r))
+  geom_tile(size = 3) +
+  labs(x = "variables", y = "variables", title = "Correlation plot")+
+  geom_text(aes(label = round(r,2)), size = 2)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+        axis.text = element_text(size = 10))+
+   scale_fill_gradient2(low = "red", high = "blue", mid = "white")
 ```
 
-```{r}
+```{r fig.width= 9, fig.height= 6}
 dist <- data |> 
   filter(treatment == "Disturbance")
-dist_corr <- bind_cols(dist[,2:7],dist[,16:29])
-corPlot(cor(dist_corr,use = "complete.obs", method = "s"))
+dist_corr <- bind_cols(dist[,2:7],dist[,12:34]) |> 
+  cor_mat(method = "spearman") |> 
+  gather(-rowname,key = cor_var, value = r)
 
+dist_corr |> 
+  ggplot(aes(rowname, cor_var, fill = r)) + 
+  geom_tile(size = 2.5) +
+  theme_minimal()+
+  labs(x = "variables", y = "variables", title = "Correlation plot", subtitle = "Treatment - Disturbance")+
+  geom_text(aes(label = round(r,2)), size = 2.2)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+        axis.text = element_text(size = 11))+
+   scale_fill_gradient2(low = "red", high = "blue", mid = "white")
+
+#ggsave("Output/corr_dist.jpg", dpi = 300, width = 9,height = 6)
 ```
 
 ```{r}
 control <- data |> 
   filter(treatment == "Control")
-control_corr <- bind_cols(control[,2:7],control[,16:29])
-corPlot(cor(control_corr,use = "complete.obs"))
+control_corr <- bind_cols(control[,2:7],control[,12:34]) |> 
+  cor_mat(method = "spearman") |> 
+  gather(-rowname,key = cor_var, value = r)
+
+control_corr |> 
+  ggplot(aes(rowname, cor_var, fill = r)) + 
+  geom_tile(size = 3) +
+  theme_minimal()+
+  labs(x = "variables", y = "variables", title = "Correlation plot", subtitle = "Treatment: Control")+
+  geom_text(aes(label = round(r,2)), size = 2.5)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+        axis.text = element_text(size = 12))+
+   scale_fill_gradient2(low = "red", high = "blue", mid = "white")
+
+#ggsave("Output/corr_control.jpg", dpi = 300, width = 9,height = 6)
 ```
 
 ```{r}
 npk <- data |> 
   filter(treatment == "NPK")
-npk_corr <- bind_cols(npk[,2:7],npk[,16:29])
-corPlot(cor(npk_corr,use = "complete.obs"))
+npk_corr <- bind_cols(npk[,2:7],npk[,16:29]) |> 
+  cor_mat(method = "spearman") |> 
+  gather(-rowname,key = cor_var, value = r)
+
+npk_corr |> 
+  ggplot(aes(rowname, cor_var, fill = r)) + 
+  geom_tile(size = 3) +
+  theme_minimal()+
+  labs(x = "variables", y = "variables", title = "Correlation plot", subtitle = "Treatment: NPK")+
+  geom_text(aes(label = round(r,2)), size = 2.5)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+        axis.text = element_text(size = 12))+
+   scale_fill_gradient2(low = "red", high = "blue", mid = "white")
+
+#ggsave("Output/corr_npk.jpg", dpi = 300, width = 9,height = 6)
+  
 ```
 
 ```{r}
 npk_dist <- data |> 
   filter(treatment == "NPK+Disturbance")
-npk_dist_corr <- bind_cols(npk_dist[,2:7],npk_dist[,16:29])
-corPlot(cor(npk_dist_corr,use = "complete.obs"))
+npk_dist_corr <- bind_cols(npk_dist[,2:7],npk_dist[,16:29]) |> 
+  cor_mat(method = "spearman") |> 
+  gather(-rowname,key = cor_var, value = r)
+
+npk_dist_corr |> 
+   ggplot(aes(rowname, cor_var, fill = r)) + 
+  geom_tile(size = 3) +
+  theme_minimal()+
+  labs(x = "variables", y = "variables", title = "Correlation plot", subtitle = "Treatment: NPK+Disturbance")+
+  geom_text(aes(label = round(r,2)), size = 2.5)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+        axis.text = element_text(size = 10),
+        legend.text = element_text(size = 12))+
+   scale_fill_gradient2(low = "red", high = "blue", mid = "white")
+#ggsave("Output/corr_npk_dist.jpg", dpi = 300, width = 9,height = 6)
+  
+
 ```
 
 ```{r}
-corrplot::
+data |> 
+   #filter(treatment == "Control") |> 
+  ggplot(aes( BD,D10))+
+  geom_point(aes(color = treatment))+
+  geom_smooth(aes(color = treatment),method = "lm", se = F)
+```
+
+```{r}
+data |> 
+  ggplot(aes(BD,Field_Capacity))+
+  geom_point(aes(color = treatment))+
+  geom_smooth(aes(color = treatment),method = "lm", se = F)
+```
+
+```{r}
+data |> 
+  ggplot(aes(BD,awc))+
+  geom_point(aes(color = treatment))+
+  geom_smooth(method = "lm", se = F)
+```
+
+```{r}
+
 ```
 
