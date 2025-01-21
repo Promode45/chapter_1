@@ -7,6 +7,7 @@ editor: visual
 ```{r}
 library(tidyverse)
 library(psych)
+library(rstatix)
 ```
 
 ```{r}
@@ -14,15 +15,14 @@ data <- readxl::read_xlsx("Data/params_struc.xlsx") |>
   mutate(label = factor(label),
          porosity = 1-(BD/2.65))
 ```
-```{r}
-data |> 
- # group_by(treatment) |> 
-  summarise(mean = mean(rsq))
-```
+
 
 ```{r}
+library(ggpubr)
 av <- aov(BD ~ treatment, data = data)
 summary(av)
+  ggqqplot(data$BD)
+
 
 TukeyHSD(av)
 levene_test(BD ~ treatment, data = data)
@@ -36,7 +36,7 @@ TukeyHSD(av_porosity)
 
 
 ```{r}
-corr_data <- bind_cols(data[,2:8],data[,12:34])
+corr_data <- bind_cols(data[,2:8],data[,12:16],data[,21],data[,35:40])
 corr_data2 <- bind_cols(data[,2:8],data[,12:16],data[,21:34])
 
 ```
@@ -168,6 +168,32 @@ data |>
 ```
 
 ```{r}
+numerical_data <- bind_cols(data[,2:8],data[,12:16],data[,21:24],data[,35:40])
+```
 
+```{r}
+data_normalized <- scale(numerical_data)
+
+data_pca <- princomp(data_normalized)
+summary(data_pca)
+```
+
+```{r}
+data_pca$loadings[,1:5]
+```
+
+```{r}
+library(FactoMineR)
+library(ggcorrplot)
+library(factoextra)
+fviz_eig(data_pca,addlabels = T)
+```
+
+```{r}
+fviz_pca_var(data_pca)
+```
+
+```{r}
+fviz_cos2(data_pca, choice = "var", axes = 1:5)
 ```
 
