@@ -258,6 +258,7 @@ for (i in 1:length(plotlist)) {
     print(plotlist[[i]])
   #ggsave(filename = paste0("plot_",i,".png"), plot = plotlist[[i]], width = 7, height = 5, dpi = 300)
 }
+ 
 ```
 
 ```{r}
