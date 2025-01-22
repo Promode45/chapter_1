@@ -19,13 +19,14 @@ data <- readxl::read_xlsx("Data/params_struc.xlsx") |>
 
 ```{r}
 library(ggpubr)
-av <- aov(BD ~ treatment, data = data)
+av <- aov( ~ treatment, data = data)
 summary(av)
   ggqqplot(data$BD)
 
 
 TukeyHSD(av)
 levene_test(BD ~ treatment, data = data)
+
 ```
 ```{r}
 av_porosity <- aov(porosity ~ treatment, data = data)
@@ -174,13 +175,11 @@ numerical_data <- bind_cols(data[,2:8],data[,12:16],data[,21:24],data[,35:40])
 ```{r}
 data_normalized <- scale(numerical_data)
 
-data_pca <- princomp(data_normalized)
+data_pca <- prcomp(data_normalized,scale. = T)
 summary(data_pca)
+
 ```
 
-```{r}
-data_pca$loadings[,1:5]
-```
 
 ```{r}
 library(FactoMineR)
@@ -190,10 +189,32 @@ fviz_eig(data_pca,addlabels = T)
 ```
 
 ```{r}
-fviz_pca_var(data_pca)
+fviz_pca_var(data_pca,
+             col.var = "contrib",
+             repel = TRUE,
+             select.var = list(contrib = 10))
 ```
 
 ```{r}
 fviz_cos2(data_pca, choice = "var", axes = 1:5)
+```
+
+```{r}
+fviz_pca_ind(data_pca)
+```
+
+```{r}
+pca_scores <- data_pca$x |> 
+  as.data.frame() |> 
+  select(PC1:PC4)
+```
+
+```{r}
+data_postpca <- data |> 
+  bind_cols(pca_scores)
+```
+
+```{r}
+lm_pca <- lm()
 ```
 
