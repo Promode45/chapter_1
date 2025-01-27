@@ -13,13 +13,14 @@ library(rstatix)
 ```{r}
 data <- readxl::read_xlsx("Data/params_struc.xlsx") |> 
   mutate(label = factor(label),
-         porosity = 1-(BD/2.65))
+         porosity = 1-(BD/2.65),
+         Classification = factor(Classification))
 ```
 
 
 ```{r}
 library(ggpubr)
-av <- aov( ~ treatment, data = data)
+av <- aov(Silt ~ treatment, data = data)
 summary(av)
   ggqqplot(data$BD)
 
@@ -37,7 +38,7 @@ TukeyHSD(av_porosity)
 
 
 ```{r}
-corr_data <- bind_cols(data[,2:8],data[,12:16],data[,21],data[,35:40])
+corr_data <- bind_cols(data[,2:8],data[,12:16],data[,21],data[,35:44],data[,46])
 corr_data2 <- bind_cols(data[,2:8],data[,12:16],data[,21:34])
 
 ```
@@ -163,13 +164,13 @@ data |>
 
 ```{r}
 data |> 
-  ggplot(aes(BD,awc))+
+  ggplot(aes(BD,air_capacity))+
   geom_point(aes(color = treatment))+
   geom_smooth(method = "lm", se = F)
 ```
 
 ```{r}
-numerical_data <- bind_cols(data[,2:8],data[,12:16],data[,21:24],data[,35:40])
+numerical_data <- bind_cols(data[,2:8],data[,12:16],data[,21:24],data[,35:44],data[,46])
 ```
 
 ```{r}
@@ -215,6 +216,15 @@ data_postpca <- data |>
 ```
 
 ```{r}
-lm_pca <- lm()
+data |> 
+  ggplot(aes(treatment,awc))+
+  geom_boxplot()+
+  geom_jitter()
+```
+
+```{r}
+data |> 
+  ggplot(aes(BD,Silt))+
+  geom_point()
 ```
 
