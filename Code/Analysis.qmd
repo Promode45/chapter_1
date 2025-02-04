@@ -200,11 +200,7 @@ p +
 ```
 
 ```{r}
-y_axis_labels <- list("Micropore proportion",
-                   "Small pore proportion",
-                   "Medium pore proportion",
-                   "Large pore proportion",
-                   expression("θ"[r]),
+y_axis_labels <- list(expression("θ"[r]),
                    expression("θ"[s]),
                    expression("α"[1]),
                    expression("n"[1]),
@@ -219,7 +215,7 @@ library(ggstatsplot)
 library(tibble)
 dat <- data_w
 x <- "treatment"
-cols <- c(12:15,2:8) # the 4 continuous dependent variables
+cols <- c(2:8) # the 4 continuous dependent variables
 type <- "non-parametric" # given the large number of observations, we use the parametric version
 paired <- F # FALSE for independent samples, TRUE for paired samples
 # edit until here
@@ -256,13 +252,12 @@ for (i in 1:length(plotlist)) {
         strip.text = element_text(size = 15),  # Facet label text
         plot.subtitle = element_text(size = 14, face = "bold"))
     print(plotlist[[i]])
-  #ggsave(filename = paste0("plot_",i,".png"), plot = plotlist[[i]], width = 7, height = 5, dpi = 300)
+  ggsave(filename = paste0("plot_",i,".png"), plot = plotlist[[i]], width = 7, height = 5, dpi = 300)
 }
  
 ```
 
 ```{r}
-kruskal.test(medium ~ disturbance, data = data_w)
 
 ```
 

@@ -20,13 +20,29 @@ data <- readxl::read_xlsx("Data/params_struc.xlsx") |>
 
 ```{r}
 library(ggpubr)
-av <- aov(Silt ~ treatment, data = data)
+av <- aov(total_c_percent ~ treatment, data = data)
 summary(av)
-  ggqqplot(data$BD)
+   ggqqplot(data$BD)
 
 
 TukeyHSD(av)
 levene_test(BD ~ treatment, data = data)
+
+dist_undist <- data |> 
+  mutate(disturbance = case_when(treatment == "Disturbance" | treatment == "NPK+Disturbance" ~ "disturbed",
+                                 .default = "undisturbed"
+                                 )) |> 
+  mutate(disturbance = factor(disturbance),
+         fertilization = case_when(treatment == "NPK" | treatment == "NPK+Disturbance" ~ "fertilized",
+                                   .default = "unfertilized"),
+         fertilization = factor(fertilization))
+
+av <- aov(total_n_percent ~ fertilization, data = dist_undist)
+summary(av)
+
+dist_undist |> 
+  ggplot(aes(fertilization,total_c_percent))+
+  geom_boxplot()
 
 ```
 ```{r}
@@ -67,7 +83,7 @@ x |>
 ```{r fig.width= 9, fig.height= 6}
 dist <- data |> 
   filter(treatment == "Disturbance")
-dist_corr <- bind_cols(dist[,2:7],dist[,12:34]) |> 
+dist_corr <- bind_cols(dist[,21],dist[,35:40],dist[,42:44]) |> 
   cor_mat(method = "spearman") |> 
   gather(-rowname,key = cor_var, value = r)
 
@@ -87,7 +103,7 @@ dist_corr |>
 ```{r}
 control <- data |> 
   filter(treatment == "Control")
-control_corr <- bind_cols(control[,2:7],control[,12:34]) |> 
+control_corr <- bind_cols(control[,35:40],control[,21],control[,42:44]) |> 
   cor_mat(method = "spearman") |> 
   gather(-rowname,key = cor_var, value = r)
 
@@ -107,7 +123,7 @@ control_corr |>
 ```{r}
 npk <- data |> 
   filter(treatment == "NPK")
-npk_corr <- bind_cols(npk[,2:7],npk[,16:29]) |> 
+npk_corr <- bind_cols(npk[,35:40],npk[,21],npk[,42:44]) |> 
   cor_mat(method = "spearman") |> 
   gather(-rowname,key = cor_var, value = r)
 
@@ -128,7 +144,7 @@ npk_corr |>
 ```{r}
 npk_dist <- data |> 
   filter(treatment == "NPK+Disturbance")
-npk_dist_corr <- bind_cols(npk_dist[,2:7],npk_dist[,16:29]) |> 
+npk_dist_corr <- bind_cols(npk_dist[,35:40],npk_dist[,21],npk_dist[,42:44]) |> 
   cor_mat(method = "spearman") |> 
   gather(-rowname,key = cor_var, value = r)
 
@@ -150,9 +166,15 @@ npk_dist_corr |>
 ```{r}
 data |> 
    #filter(treatment == "Control") |> 
-  ggplot(aes(BD,D100))+
+  ggplot(aes(Sand,transmission_pores))+
   geom_point(aes(color = treatment))+
   geom_smooth(aes(color = treatment),method = "lm", se = F)
+
+data |> 
+  ggplot(aes(Sand,storage_pores))+
+  geom_point()+
+  geom_smooth(method = "lm", se = F)+
+  facet_wrap(~treatment)
 ```
 
 ```{r}
@@ -170,11 +192,12 @@ data |>
 ```
 
 ```{r}
-numerical_data <- bind_cols(data[,2:8],data[,12:16],data[,21:24],data[,35:44],data[,46])
+numerical_data <- bind_cols(data[,2:8],data[,12:16],data[,21:24],data[,35:44])
 ```
 
 ```{r}
 data_normalized <- scale(numerical_data)
+colnames(data_normalized) <- c("θr","θs","α1","n1","α2","n2","w","FC", "GCP","PWP","AWC","PWC","BD","RD","TotalC","TotalN","Bonding Space","Residual Pores","Storage Pores","Transmission Pores","Fissures","OM","AC","^%Sand","%Silt","%Clay")
 
 data_pca <- prcomp(data_normalized,scale. = T)
 summary(data_pca)
@@ -190,10 +213,15 @@ fviz_eig(data_pca,addlabels = T)
 ```
 
 ```{r}
-fviz_pca_var(data_pca,
+p <- fviz_pca_var(data_pca,
              col.var = "contrib",
              repel = TRUE,
-             select.var = list(contrib = 10))
+             select.var = list(contrib = 25))
+p+
+  theme_classic()+
+  theme(axis.text = element_text(size = 15))
+
+ggsave("Output/pca.jpg",width = 7,height = 6,dpi = 300)
 ```
 
 ```{r}
@@ -217,14 +245,22 @@ data_postpca <- data |>
 
 ```{r}
 data |> 
-  ggplot(aes(treatment,awc))+
-  geom_boxplot()+
-  geom_jitter()
+  ggplot(aes(thetar,Permanent_Wilting_Point))+
+  geom_point()+
+  geom_smooth(method = "lm")
 ```
 
 ```{r}
 data |> 
-  ggplot(aes(BD,Silt))+
-  geom_point()
+  ggplot(aes(porosity,thetas))+
+  geom_point()+
+  geom_smooth(method = "lm")
+```
+
+
+```{r}
+data |> 
+  ggplot(aes(treatment,total_c_percent))+
+  geom_boxplot()
 ```
 
