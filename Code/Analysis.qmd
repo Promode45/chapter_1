@@ -26,7 +26,14 @@ data_w <- data |>
          fertilization = case_when(treatment == "NPK" | treatment == "NPK+Disturbance" ~ "Fertilized",
                                    .default = "Unfertilized"),
          disturbance = case_when(treatment == "Disturbance" | treatment == "NPK+Disturbance" ~ "Disturbed",
-                                 .default = "Undisturbed"))
+                                 .default = "Undisturbed"),
+         block = case_when(label == c(1:5) ~ 1,
+                           label == c(6:10) ~ 2,
+                           label == c(11:15) ~ 3,
+                           label == c(16:20) ~ 4,
+                           .default = 5
+           
+         ))
 ```
 
 ```{r}
@@ -259,5 +266,20 @@ for (i in 1:length(plotlist)) {
 
 ```{r}
 
+```
+
+```{r}
+mod <- lm(pH ~ treatment, data = data_w)
+summary(mod)
+```
+
+```{r}
+library(car)
+library(multcomp)
+Anova(mod,type = 3)
+emm <- emmeans::emmeans(mod,
+                        ~treatment)
+
+crd <- cld(emm,reversed = T, Letters= letters, adjust = "none")
 ```
 

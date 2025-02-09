@@ -44,6 +44,11 @@ dist_undist |>
   ggplot(aes(fertilization,total_c_percent))+
   geom_boxplot()
 
+data |> 
+  ggplot(aes(OM,BD))+
+  geom_point()+
+  geom_smooth(method = "lm")
+
 ```
 ```{r}
 av_porosity <- aov(porosity ~ treatment, data = data)
